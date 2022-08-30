@@ -1,4 +1,4 @@
-# Networking
+
 
 ## Overview
 
@@ -75,13 +75,36 @@ docker container rm alpine1 alpine2
 
 ## User defined bridge networks
 
+- provide automatic DNS resolution between containers
+  - default bridge containers can only access by IP addresses
+  - In user-defined network, containers can resolve each other by alias or name
+- better isolation
+- each user-defined network creates a configurable bridge
+
 ```sh
-docker network create --driver bridge alpine-net
+# create a user-defined bridge
+docker network create my-net
+# docker network rm my-net
 
-docker network ls
+## create a new container 
+docker create \
+    --name my-nginx \
+    --network my-net \
+    --publish 8080:80 \
+    nginx:latest
 
-docker run -dit --name alpineX --network alpine-net alpine ash
-# do this four times
+## or connect a existing container
+docker network connect    my-net my-nginx
+docker network disconnect my-net my-nginx
+```
 
+## Enabling forwardming from Docker containers to the outside world
 
+By deffault, traffic from containers connected to the default bridge network is not forwared to the outside world. To enable forwarding, you need to change two settings.
 
+```sh
+sysctl net.ipv4.conf.all.forwarding=1
+sudo iptables -P FORWARD ACCEPT
+```
+
+These settings do not persist across a reboot, so you need to add them to a start-up script
